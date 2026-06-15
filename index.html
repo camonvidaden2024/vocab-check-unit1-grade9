@@ -123,12 +123,12 @@ tr:nth-child(even){background-color: #f9f9f9;}
 </div>
 
 <div id="startScreen" class="screen hidden">
-    <h1 style="color:#F99895; text-shadow:none;">STUDENT LOGIN</h1>
+    <h1 style="color:#F99895; text-shadow:none;">VOCAB CHECK</h1>
     <input type="text" id="studentName" placeholder="Type your name...">
     <br>
     <button onclick="startGame()">START</button>
     <br>
-    <button style="background:#ccc; color:black; font-size:16px; padding:5px 15px;" onclick="showScreen('roleScreen')">Quay lại</button>
+    <button style="background:#ccc; color:black; font-size:16px; padding:5px 15px;" onclick="showScreen('roleScreen')">BACK</button>
 </div>
 
 <div id="quizScreen" class="screen hidden">
@@ -262,7 +262,7 @@ function showScreen(screenId) {
 
 function checkTeacherPassword() {
     let pass = prompt("Nhập mật khẩu Giáo Viên để quản lý:");
-    if(pass === "123456") { // Bạn có thể sửa mật khẩu tại đây
+    if(pass === "442266") { // Bạn có thể sửa mật khẩu tại đây
         showScreen('teacherScreen');
     } else { alert("Sai mật khẩu!"); }
 }
