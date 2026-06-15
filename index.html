@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VOCAB TIME!</title>
+<title>VOCAB SYSTEM - ANALYTICS & MANAGEMENT</title>
 <style>
 body{
     font-family:"Times New Roman",serif;
@@ -15,163 +15,176 @@ body{
     align-items:center;
 }
 .screen{
-    width:85%;
-    max-width:750px;
+    width:90%;
+    max-width:850px;
     background:rgba(255,255,255,0.95);
     padding:35px;
     border-radius:20px;
     box-shadow:0 10px 25px rgba(0,0,0,.15);
     text-align:center;
+    margin:20px;
 }
 .hidden{display:none;}
-h1{
-    font-size:52px;
-    color:white;
-    text-shadow:3px 3px 5px rgba(0,0,0,.25);
-}
-input{
-    width:80%;
-    padding:14px;
-    font-size:22px;
-    border-radius:10px;
-    border:2px solid #ccc;
-    font-family:"Times New Roman",serif;
+h1{ font-size:45px; color:#BA1B18; text-shadow:2px 2px 4px rgba(0,0,0,.15); margin-top:0;}
+input, select{
+    width:75%; padding:12px; font-size:18px; border-radius:10px; border:2px solid #ccc; font-family:"Times New Roman",serif; margin-bottom:10px;
 }
 button{
-    margin-top:20px;
-    padding:12px 30px;
-    font-size:22px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-    background:#F99895;
-    color:white;
-    font-family:"Times New Roman",serif;
+    margin:10px 5px; padding:10px 25px; font-size:18px; border:none; border-radius:10px; cursor:pointer; background:#F99895; color:white; font-family:"Times New Roman",serif; transition: 0.2s;
 }
-#timer{
-    font-size:42px;
-    color:#BA1B18;
-    font-weight:bold;
-}
-#progressContainer{
-    width:100%;
-    height:22px;
-    background:#ddd;
-    border-radius:20px;
-    overflow:hidden;
-    margin:15px 0;
-}
-#progressBar{
-    width:0%;
-    height:100%;
-    background:#9ABF17;
-    transition:.4s;
-}
-#questionCounter{font-size:24px;}
-#questionBox{
-    font-size:38px;
-    font-weight:bold;
-    margin:25px 0;
-}
+button:hover{ background:#e08582; }
+.btn-teacher{ background:#4A90E2; }
+.btn-teacher:hover{ background:#357ABD; }
+#timer{ font-size:38px; color:#BA1B18; font-weight:bold; }
+#progressContainer{ width:100%; height:18px; background:#ddd; border-radius:20px; overflow:hidden; margin:15px 0; }
+#progressBar{ width:0%; height:100%; background:#9ABF17; transition:.4s; }
+#questionBox{ font-size:35px; font-weight:bold; margin:20px 0; }
 .correct{background:#9ABF17 !important;color:white;}
 .wrong{background:#BA1B18 !important;color:white;}
-#feedback{
-    font-size:90px;
-    height:100px;
-    font-weight:bold;
-}
+#feedback{ font-size:80px; height:90px; font-weight:bold; }
 .correctMark{color:#9ABF17;}
 .wrongMark{color:#BA1B18;}
-#finalScore{
-    font-size:48px;
-    color:#9ABF17;
-    font-weight:bold;
-}
-.firework{
-    position:fixed;
-    font-size:40px;
-    animation:explode 2s linear forwards;
-}
-@keyframes explode{
-    from{transform:translateY(0);opacity:1;}
-    to{transform:translateY(-250px);opacity:0;}
-}
+#finalScore{ font-size:42px; color:#9ABF17; font-weight:bold; }
+/* Giao diện giáo viên */
+table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 16px; }
+th { background-color: #4A90E2; color: white; }
+tr:nth-child(even){background-color: #f2f2f2;}
+.vocab-list { max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #fff; border-radius: 8px; text-align: left; margin-bottom: 15px; }
+.vocab-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #eee; }
+.firework{ position:fixed; font-size:40px; animation:explode 2s linear forwards; }
+@keyframes explode{ from{transform:translateY(0);opacity:1;} to{transform:translateY(-250px);opacity:0;} }
 </style>
 </head>
 <body>
 
-<div id="startScreen" class="screen">
-<h1>VOCAB TIME!</h1>
-<input type="text" id="studentName" placeholder="Type your name...">
-<br>
-<button onclick="startGame()">START</button>
+<div id="roleScreen" class="screen">
+    <h1>WELCOME TO VOCAB TIME!</h1>
+    <p style="font-size:22px;">Vui lòng chọn vai trò của bạn để tiếp tục:</p>
+    <button onclick="showScreen('startScreen')">HỌC SINH (STUDENT)</button>
+    <br>
+    <button class="btn-teacher" onclick="checkTeacherPassword()">GIÁO VIÊN (TEACHER)</button>
+</div>
+
+<div id="startScreen" class="screen hidden">
+    <h1>HỌC SINH ĐĂNG NHẬP</h1>
+    <input type="text" id="studentName" placeholder="Nhập họ và tên của bạn...">
+    <br>
+    <button onclick="startGame()">BẮT ĐẦU LÀM BÀI</button>
+    <br>
+    <button style="background:#ccc; color:black;" onclick="showScreen('roleScreen')">Quay lại</button>
 </div>
 
 <div id="quizScreen" class="screen hidden">
-<div id="timer">Time Left: 60s</div>
-
-<div id="progressContainer">
-<div id="progressBar"></div>
-</div>
-
-<div id="questionCounter"></div>
-<div id="questionBox"></div>
-<div id="feedback"></div>
-
-<input type="text" id="answerInput" placeholder="Type your answer..." oninput="checkAnswer()">
-<br>
-<button onclick="nextQuestion()">NEXT</button>
+    <div id="timer">Time Left: 60s</div>
+    <div id="progressContainer"><div id="progressBar"></div></div>
+    <div id="questionCounter" style="font-size:20px;"></div>
+    <div id="questionBox"></div>
+    <div id="feedback"></div>
+    <input type="text" id="answerInput" placeholder="Type your answer..." oninput="checkAnswer()">
+    <br>
+    <button onclick="nextQuestion()">NEXT</button>
 </div>
 
 <div id="resultScreen" class="screen hidden">
-<h2 style="font-size:48px;">CONGRATULATIONS!</h2>
-<p style="font-size:30px;">YOU GET</p>
-<div id="finalScore"></div>
+    <h2 style="font-size:44px;">CONGRATULATIONS!</h2>
+    <p style="font-size:26px;">YOU GET</p>
+    <div id="finalScore"></div>
+    <button onclick="location.reload()">Làm lại bài</button>
 </div>
 
-<audio id="correctSound" preload="auto">
-<source src="correct.mp3" type="audio/mpeg">
-</audio>
+<div id="teacherScreen" class="screen hidden">
+    <h1 style="color:#4A90E2;">BẢNG ĐIỀU KHIỂN CỦA GIÁO VIÊN</h1>
+    <button onclick="showScreen('roleScreen')" style="background:#666;">Thoát chế độ GV</button>
+    
+    <hr>
+    
+    <h2>1. Quản lý Từ Vựng (<span id="totalQuestCount">0</span> câu)</h2>
+    <div class="vocab-list" id="vocabListContainer"></div>
+    
+    <div style="background:#eef5fc; padding:15px; border-radius:10px; text-align:left;">
+        <h3>Thêm câu hỏi mới:</h3>
+        <input type="text" id="newViet" placeholder="Nghĩa tiếng Việt (Ví dụ: quả táo)" style="width:95%;">
+        <input type="text" id="newEng" placeholder="Từ tiếng Anh tương ứng (Ví dụ: apple)" style="width:95%;">
+        <br>
+        <button class="btn-teacher" onclick="addQuestion()">Thêm Vào Hệ Thống</button>
+    </div>
 
-<audio id="wrongSound" preload="auto">
-<source src="wrong.mp3" type="audio/mpeg">
-</audio>
+    <hr>
+
+    <h2>2. Lịch Sử Làm Bài Của Học Sinh</h2>
+    <button onclick="clearAnalytics()" style="background:#BA1B18;">Xóa tất cả lịch sử</button>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tên Học Sinh</th>
+                    <th>Số lần làm</th>
+                    <th>Câu Đúng</th>
+                    <th>Câu Sai</th>
+                    <th>Thời gian nộp</th>
+                </tr>
+            </thead>
+            <tbody id="analyticsTableBody">
+                <tr><td colspan="5">Đang tải dữ liệu học sinh...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<audio id="correctSound" preload="auto"><source src="correct.mp3" type="audio/mpeg"></audio>
+<audio id="wrongSound" preload="auto"><source src="wrong.mp3" type="audio/mpeg"></audio>
 
 <script>
-const questions=[
-{vietnamese:"cơ sở vật chất",english:"facilities"},
-{vietnamese:"lính cứu hỏa",english:"firefighter"},
-{vietnamese:"chuẩn bị",english:"prepare"},
-{vietnamese:"tầm quan trọng",english:"importance"},
-{vietnamese:"tiệc tân gia",english:"house-warming party"},
-{vietnamese:"đặc sản địa phương",english:"speciality food"},
-{vietnamese:"người tiêu thụ, khách hàng",english:"consumer"},
-{vietnamese:"làm thủ công",english:"hand-craft"},
-{vietnamese:"trung tâm thành phố",english:"city centre"},
-{vietnamese:"hướng dẫn",english:"instruct"},
-{vietnamese:"thợ thủ công",english:"artisan"},
-{vietnamese:"cải thiện",english:"improve"},
-{vietnamese:"điểm thu hút khách du lịch",english:"tourist attraction"},
-{vietnamese:"địa phương",english:"local"},
-{vietnamese:"nguyên bản",english:"original"},
-{vietnamese:"cảnh sát",english:"police officer"},
-{vietnamese:"rút ngắn",english:"shorten"},
-{vietnamese:"người giao hàng",english:"delivery person"},
-{vietnamese:"quạt giấy",english:"paper fan"},
-{vietnamese:"đồ gốm",english:"pottery"},
-{vietnamese:"chăm chỉ",english:"hard-working"},
-{vietnamese:"va li",english:"suitcase"},
-{vietnamese:"tài sản",english:"property"},
-{vietnamese:"thợ điện",english:"electrician"},
-{vietnamese:"hương thơm",english:"fragrance"},
-{vietnamese:"đồ thủ công",english:"handicraft"},
-{vietnamese:"dây điện",english:"electrical wires"},
-{vietnamese:"được sản xuất hàng loạt",english:"manufactured"},
-{vietnamese:"người thu gom rác",english:"garbage collector"},
-{vietnamese:"phân loại",english:"sort"},
+// --- ĐƯỜNG DẪN FIREBASE CỦA BẠN ---
+const FIREBASE_URL = "https://vocab-check-for-teachers-default-rtdb.firebaseio.com/";
+
+// Ngân hàng câu hỏi mặc định dự phòng (Nếu Firebase trống sẽ tự nạp bộ này)
+const defaultQuestions = [
+    {vietnamese:"cơ sở vật chất",english:"facilities"},
+    {vietnamese:"lính cứu hỏa",english:"firefighter"},
+    {vietnamese:"chuẩn bị",english:"prepare"},
+    {vietnamese:"tầm quan trọng",english:"importance"},
+    {vietnamese:"tiệc tân gia",english:"house-warming party"},
 ];
 
-shuffleArray(questions);
+let questions = [];
+let currentQuestion=0, score=0, totalWrong=0, timeLeft=60, timer, lastState="", isPlaying=false, studentName="";
+
+// Tự động tải câu hỏi từ Firebase ngay khi mở trang web
+async function loadQuestionsFromDatabase() {
+    try {
+        let res = await fetch(`${FIREBASE_URL}/questions.json`);
+        let data = await res.json();
+        if (data) {
+            questions = Object.keys(data).map(key => ({id: key, ...data[key]}));
+        } else {
+            // Nếu database trống, nạp dữ liệu mặc định lên
+            for (let q of defaultQuestions) {
+                await fetch(`${FIREBASE_URL}/questions.json`, { method: 'POST', body: JSON.stringify(q) });
+            }
+            return loadQuestionsFromDatabase();
+        }
+        document.getElementById("totalQuestCount").innerText = questions.length;
+        renderVocabList();
+    } catch (e) { console.log("Lỗi tải database, đang dùng bộ nhớ tạm", e); questions = [...defaultQuestions]; }
+}
+loadQuestionsFromDatabase();
+
+// Chuyển đổi màn hình giao diện
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById(screenId).classList.remove('hidden');
+    if(screenId === 'teacherScreen') { loadAnalytics(); }
+}
+
+// Bảo mật mật khẩu phòng giáo viên đơn giản
+function checkTeacherPassword() {
+    let pass = prompt("Nhập mật khẩu Giáo Viên để truy cập:");
+    if(pass === "123456") { // Bạn có thể đổi mật khẩu 123456 này thành số khác nhé
+        showScreen('teacherScreen');
+    } else { alert("Sai mật khẩu!"); }
+}
 
 function shuffleArray(array){
     for(let i=array.length-1;i>0;i--){
@@ -181,25 +194,19 @@ function shuffleArray(array){
     return array;
 }
 
-let currentQuestion=0;
-let score=0;
-let timeLeft=60;
-let timer;
-let lastState="";
-let isPlaying=false; // Quản lý trạng thái đang chơi để bắt sự kiện chuyển tab
-
 function startGame(){
-    const name=document.getElementById("studentName").value.trim();
-    if(name===""){alert("Please type your name!");return;}
+    studentName = document.getElementById("studentName").value.trim();
+    if(studentName===""){alert("Please type your name!");return;}
     
-    // Kích hoạt hệ thống âm thanh
+    // Xáo trộn bộ câu hỏi lấy từ dữ liệu giáo viên về
+    shuffleArray(questions);
+
     document.getElementById("correctSound").play().then(() => {
         document.getElementById("correctSound").pause();
         document.getElementById("correctSound").currentTime = 0;
     }).catch(e => console.log("Chờ tương tác"));
 
-    document.getElementById("startScreen").classList.add("hidden");
-    document.getElementById("quizScreen").classList.remove("hidden");
+    showScreen('quizScreen');
     isPlaying = true; 
     loadQuestion();
 }
@@ -208,34 +215,22 @@ function startTimer() {
     clearInterval(timer);
     timeLeft = 60;
     document.getElementById("timer").innerText = "Time Left: " + timeLeft + "s";
-
     timer = setInterval(() => {
         timeLeft--;
         document.getElementById("timer").innerText = "Time Left: " + timeLeft + "s";
-
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            nextQuestion();
-        }
+        if (timeLeft <= 0) { clearInterval(timer); totalWrong++; nextQuestion(); }
     }, 1000);
 }
 
 function loadQuestion(){
-    document.getElementById("questionCounter").innerHTML=
-    "Question "+(currentQuestion+1)+" / "+questions.length;
-
+    document.getElementById("questionCounter").innerHTML= "Question "+(currentQuestion+1)+" / "+questions.length;
     document.getElementById("questionBox").innerHTML=questions[currentQuestion].vietnamese;
-
-    let progress=(currentQuestion/questions.length)*100;
-    document.getElementById("progressBar").style.width=progress+"%";
+    document.getElementById("progressBar").style.width=((currentQuestion/questions.length)*100)+"%";
 
     let input=document.getElementById("answerInput");
-    input.value="";
-    input.classList.remove("correct","wrong");
+    input.value=""; input.classList.remove("correct","wrong");
     document.getElementById("feedback").innerHTML="";
-    lastState="";
-    input.focus();
-    
+    lastState=""; input.focus();
     startTimer();
 }
 
@@ -243,36 +238,20 @@ function checkAnswer(){
     const input=document.getElementById("answerInput");
     const answer=input.value.trim().toLowerCase();
     const feedback=document.getElementById("feedback");
-
-    if(answer===""){
-        input.classList.remove("correct","wrong");
-        feedback.innerHTML="";
-        lastState="";
-        return;
-    }
+    if(answer===""){ input.classList.remove("correct","wrong"); feedback.innerHTML=""; lastState=""; return; }
 
     if(answer===questions[currentQuestion].english){
-        input.classList.add("correct");
-        input.classList.remove("wrong");
-        feedback.innerHTML="✔";
-        feedback.className="correctMark";
-
+        input.classList.add("correct"); input.classList.remove("wrong");
+        feedback.innerHTML="✔"; feedback.className="correctMark";
         if(lastState!=="correct"){
-            const snd = document.getElementById("correctSound");
-            snd.currentTime = 0;
-            snd.play().catch(err => console.log(err));
+            const snd = document.getElementById("correctSound"); snd.currentTime = 0; snd.play().catch(e=>{});
             lastState="correct";
         }
     }else{
-        input.classList.add("wrong");
-        input.classList.remove("correct");
-        feedback.innerHTML="✖";
-        feedback.className="wrongMark";
-
+        input.classList.add("wrong"); input.classList.remove("correct");
+        feedback.innerHTML="✖"; feedback.className="wrongMark";
         if(lastState!=="wrong"){
-            const snd = document.getElementById("wrongSound");
-            snd.currentTime = 0;
-            snd.play().catch(err => console.log(err));
+            const snd = document.getElementById("wrongSound"); snd.currentTime = 0; snd.play().catch(e=>{});
             lastState="wrong";
         }
     }
@@ -280,54 +259,136 @@ function checkAnswer(){
 
 function nextQuestion(){
     const answer=document.getElementById("answerInput").value.trim().toLowerCase();
-
-    if(answer===questions[currentQuestion].english){
-        score++;
-    }
-
+    if(answer===questions[currentQuestion].english){ score++; } else { totalWrong++; }
     currentQuestion++;
-
-    if(currentQuestion>=questions.length){
-        finishQuiz();
-        return;
-    }
-
+    if(currentQuestion>=questions.length){ finishQuiz(); return; }
     loadQuestion();
 }
 
-function launchFireworks(){
-    for(let i=0;i<40;i++){
-        const f=document.createElement("div");
-        f.className="firework";
-        f.innerHTML=["🎆","✨","🎉"][Math.floor(Math.random()*3)];
-        f.style.left=Math.random()*100+"vw";
-        f.style.top=Math.random()*100+"vh";
-        document.body.appendChild(f);
-        setTimeout(()=>f.remove(),2000);
-    }
+// Nộp kết quả lên hệ thống Giáo viên
+async function sendResultToDatabase() {
+    let record = {
+        name: studentName,
+        correct: score,
+        wrong: totalWrong,
+        time: new Date().toLocaleString('vi-VN')
+    };
+    try {
+        await fetch(`${FIREBASE_URL}/analytics.json`, { method: 'POST', body: JSON.stringify(record) });
+    } catch (e) { console.log("Không thể lưu kết quả", e); }
 }
 
 function finishQuiz(){
-    isPlaying = false; // Ngắt trạng thái chơi để tránh lặp sự kiện
+    if(!isPlaying) return;
+    isPlaying = false; 
     clearInterval(timer);
-    document.getElementById("quizScreen").classList.add("hidden");
-    document.getElementById("resultScreen").classList.remove("hidden");
+    sendResultToDatabase();
+    showScreen('resultScreen');
     document.getElementById("finalScore").innerHTML=score+" / "+questions.length;
-    launchFireworks(); // Luôn bắn pháo hoa ăn mừng dù kết thúc bằng cách nào
+    launchFireworks(); 
 }
 
-// Bắt sự kiện chuyển tab hoặc ẩn trình duyệt để nộp bài thầm lặng
+// BẬT TÍNH NĂNG CHUYỂN TAB TỰ ĐỘNG NỘP BÀI VÀ TÍNH ĐIỂM ĐẾN CÂU HIỆN TẠI
 document.addEventListener("visibilitychange", function() {
     if (document.visibilityState === "hidden" && isPlaying) {
+        // Cộng hết các câu chưa làm vào ô Câu sai
+        let uncompleted = questions.length - currentQuestion;
+        totalWrong += uncompleted;
         finishQuiz();
     }
 });
 
-document.addEventListener("keypress",function(e){
-    if(e.key==="Enter" &&
-    !document.getElementById("quizScreen").classList.contains("hidden")){
-        nextQuestion();
+// --- CÁC HÀM XỬ LÝ CỦA GIÁO VIÊN ---
+
+// 1. Hiển thị danh sách từ vựng hiện tại để sửa/xóa
+function renderVocabList() {
+    let html = "";
+    questions.forEach((q, index) => {
+        html += `<div class="vocab-item">
+            <span>${index+1}. <b>${q.vietnamese}</b>: ${q.english}</span>
+            <button onclick="deleteQuestion('${q.id}')" style="background:#BA1B18; padding:3px 10px; font-size:12px; margin:0;">Xóa</button>
+        </div>`;
+    });
+    document.getElementById("vocabListContainer").innerHTML = html;
+}
+
+// 2. Thêm từ vựng mới lên Firebase
+async function addQuestion() {
+    let v = document.getElementById("newViet").value.trim();
+    let e = document.getElementById("newEng").value.trim();
+    if(!v || !e) { alert("Vui lòng nhập đủ thông tin!"); return; }
+    
+    await fetch(`${FIREBASE_URL}/questions.json`, {
+        method: 'POST',
+        body: JSON.stringify({ vietnamese: v, english: e.toLowerCase() })
+    });
+    document.getElementById("newViet").value = "";
+    document.getElementById("newEng").value = "";
+    await loadQuestionsFromDatabase();
+}
+
+// 3. Xóa từ vựng khỏi Firebase
+async function deleteQuestion(id) {
+    if(!confirm("Bạn chắc chắn muốn xóa câu hỏi này?")) return;
+    await fetch(`${FIREBASE_URL}/questions/${id}.json`, { method: 'DELETE' });
+    await loadQuestionsFromDatabase();
+}
+
+// 4. Tải dữ liệu kết quả học sinh làm bài về bảng
+async function loadAnalytics() {
+    try {
+        let res = await fetch(`${FIREBASE_URL}/analytics.json`);
+        let data = await res.json();
+        let tbody = document.getElementById("analyticsTableBody");
+        
+        if(!data) { tbody.innerHTML = "<tr><td colspan='5'>Chưa có học sinh nào làm bài.</td></tr>"; return; }
+        
+        // Thống kê số lần làm bài theo Tên học sinh
+        let studentSummary = {};
+        Object.keys(data).forEach(key => {
+            let item = data[key];
+            if(!studentSummary[item.name]) {
+                studentSummary[item.name] = { count: 0, correct: 0, wrong: 0, lastTime: "" };
+            }
+            studentSummary[item.name].count += 1;
+            studentSummary[item.name].correct += item.correct;
+            studentSummary[item.name].wrong += item.wrong;
+            studentSummary[item.name].lastTime = item.time;
+        });
+        
+        let html = "";
+        Object.keys(studentSummary).forEach(name => {
+            let s = studentSummary[name];
+            html += `<tr>
+                <td><b>${name}</b></td>
+                <td>${s.count} lần</td>
+                <td style="color:#9ABF17; font-weight:bold;">${s.correct} câu</td>
+                <td style="color:#BA1B18; font-weight:bold;">${s.wrong} câu</td>
+                <td>${s.lastTime}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    } catch(e) { console.log(e); }
+}
+
+// 5. Xóa lịch sử làm bài
+async function clearAnalytics() {
+    if(!confirm("Bạn có chắc chắn muốn xóa sạch toàn bộ lịch sử làm bài của học sinh?")) return;
+    await fetch(`${FIREBASE_URL}/analytics.json`, { method: 'DELETE' });
+    loadAnalytics();
+}
+
+function launchFireworks(){
+    for(let i=0;i<40;i++){
+        const f=document.createElement("div"); f.className="firework";
+        f.innerHTML=["🎆","✨","🎉"][Math.floor(Math.random()*3)];
+        f.style.left=Math.random()*100+"vw"; f.style.top=Math.random()*100+"vh";
+        document.body.appendChild(f); setTimeout(()=>f.remove(),2000);
     }
+}
+
+document.addEventListener("keypress",function(e){
+    if(e.key==="Enter" && !document.getElementById("quizScreen").classList.contains("hidden")){ nextQuestion(); }
 });
 </script>
 </body>
