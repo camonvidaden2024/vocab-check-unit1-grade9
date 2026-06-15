@@ -1,0 +1,334 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOCAB TIME!</title>
+<style>
+body{
+    font-family:"Times New Roman",serif;
+    background:linear-gradient(135deg,#F99895,#ABD5A4);
+    min-height:100vh;
+    margin:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+.screen{
+    width:85%;
+    max-width:750px;
+    background:rgba(255,255,255,0.95);
+    padding:35px;
+    border-radius:20px;
+    box-shadow:0 10px 25px rgba(0,0,0,.15);
+    text-align:center;
+}
+.hidden{display:none;}
+h1{
+    font-size:52px;
+    color:white;
+    text-shadow:3px 3px 5px rgba(0,0,0,.25);
+}
+input{
+    width:80%;
+    padding:14px;
+    font-size:22px;
+    border-radius:10px;
+    border:2px solid #ccc;
+    font-family:"Times New Roman",serif;
+}
+button{
+    margin-top:20px;
+    padding:12px 30px;
+    font-size:22px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    background:#F99895;
+    color:white;
+    font-family:"Times New Roman",serif;
+}
+#timer{
+    font-size:42px;
+    color:#BA1B18;
+    font-weight:bold;
+}
+#progressContainer{
+    width:100%;
+    height:22px;
+    background:#ddd;
+    border-radius:20px;
+    overflow:hidden;
+    margin:15px 0;
+}
+#progressBar{
+    width:0%;
+    height:100%;
+    background:#9ABF17;
+    transition:.4s;
+}
+#questionCounter{font-size:24px;}
+#questionBox{
+    font-size:38px;
+    font-weight:bold;
+    margin:25px 0;
+}
+.correct{background:#9ABF17 !important;color:white;}
+.wrong{background:#BA1B18 !important;color:white;}
+#feedback{
+    font-size:90px;
+    height:100px;
+    font-weight:bold;
+}
+.correctMark{color:#9ABF17;}
+.wrongMark{color:#BA1B18;}
+#finalScore{
+    font-size:48px;
+    color:#9ABF17;
+    font-weight:bold;
+}
+.firework{
+    position:fixed;
+    font-size:40px;
+    animation:explode 2s linear forwards;
+}
+@keyframes explode{
+    from{transform:translateY(0);opacity:1;}
+    to{transform:translateY(-250px);opacity:0;}
+}
+</style>
+</head>
+<body>
+
+<div id="startScreen" class="screen">
+<h1>VOCAB TIME!</h1>
+<input type="text" id="studentName" placeholder="Type your name...">
+<br>
+<button onclick="startGame()">START</button>
+</div>
+
+<div id="quizScreen" class="screen hidden">
+<div id="timer">Time Left: 60s</div>
+
+<div id="progressContainer">
+<div id="progressBar"></div>
+</div>
+
+<div id="questionCounter"></div>
+<div id="questionBox"></div>
+<div id="feedback"></div>
+
+<input type="text" id="answerInput" placeholder="Type your answer..." oninput="checkAnswer()">
+<br>
+<button onclick="nextQuestion()">NEXT</button>
+</div>
+
+<div id="resultScreen" class="screen hidden">
+<h2 style="font-size:48px;">CONGRATULATIONS!</h2>
+<p style="font-size:30px;">YOU GET</p>
+<div id="finalScore"></div>
+</div>
+
+<audio id="correctSound" preload="auto">
+<source src="E:\BAO NA\NA\web ôn luyện\VOCAB TIME\css\correct.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="wrongSound" preload="auto">
+<source src="E:\BAO NA\NA\web ôn luyện\VOCAB TIME\css\wrong.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const questions=[
+{vietnamese:"cơ sở vật chất",english:"facilities"},
+{vietnamese:"lính cứu hỏa",english:"firefighter"},
+{vietnamese:"chuẩn bị",english:"prepare"},
+{vietnamese:"tầm quan trọng",english:"importance"},
+{vietnamese:"tiệc tân gia",english:"house-warming party"},
+{vietnamese:"đặc sản địa phương",english:"speciality food"},
+{vietnamese:"người tiêu thụ, khách hàng",english:"consumer"},
+{vietnamese:"làm thủ công",english:"hand-craft"},
+{vietnamese:"trung tâm thành phố",english:"city centre"},
+{vietnamese:"hướng dẫn",english:"instruct"},
+{vietnamese:"thợ thủ công",english:"artisan"},
+{vietnamese:"cải thiện",english:"improve"},
+{vietnamese:"điểm thu hút khách du lịch",english:"tourist attraction"},
+{vietnamese:"địa phương",english:"local"},
+{vietnamese:"nguyên bản",english:"original"},
+{vietnamese:"cảnh sát",english:"police officer"},
+{vietnamese:"rút ngắn",english:"shorten"},
+{vietnamese:"người giao hàng",english:"delivery person"},
+{vietnamese:"quạt giấy",english:"paper fan"},
+{vietnamese:"đồ gốm",english:"pottery"},
+{vietnamese:"chăm chỉ",english:"hard-working"},
+{vietnamese:"va li",english:"suitcase"},
+{vietnamese:"tài sản",english:"property"},
+{vietnamese:"thợ điện",english:"electrician"},
+{vietnamese:"hương thơm",english:"fragrance"},
+{vietnamese:"đồ thủ công",english:"handicraft"},
+{vietnamese:"dây điện",english:"electrical wires"},
+{vietnamese:"được sản xuất hàng loạt",english:"manufactured"},
+{vietnamese:"người thu gom rác",english:"garbage collector"},
+{vietnamese:"phân loại",english:"sort"},
+];
+
+shuffleArray(questions);
+
+function shuffleArray(array){
+    for(let i=array.length-1;i>0;i--){
+        let j=Math.floor(Math.random()*(i+1));
+        [array[i],array[j]]=[array[j],array[i]];
+    }
+    return array;
+}
+
+let currentQuestion=0;
+let score=0;
+let timeLeft=60;
+let timer;
+let lastState="";
+let isPlaying=false; // Quản lý trạng thái đang chơi để bắt sự kiện chuyển tab
+
+function startGame(){
+    const name=document.getElementById("studentName").value.trim();
+    if(name===""){alert("Please type your name!");return;}
+    
+    // Kích hoạt hệ thống âm thanh
+    document.getElementById("correctSound").play().then(() => {
+        document.getElementById("correctSound").pause();
+        document.getElementById("correctSound").currentTime = 0;
+    }).catch(e => console.log("Chờ tương tác"));
+
+    document.getElementById("startScreen").classList.add("hidden");
+    document.getElementById("quizScreen").classList.remove("hidden");
+    isPlaying = true; 
+    loadQuestion();
+}
+
+function startTimer() {
+    clearInterval(timer);
+    timeLeft = 60;
+    document.getElementById("timer").innerText = "Time Left: " + timeLeft + "s";
+
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").innerText = "Time Left: " + timeLeft + "s";
+
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            nextQuestion();
+        }
+    }, 1000);
+}
+
+function loadQuestion(){
+    document.getElementById("questionCounter").innerHTML=
+    "Question "+(currentQuestion+1)+" / "+questions.length;
+
+    document.getElementById("questionBox").innerHTML=questions[currentQuestion].vietnamese;
+
+    let progress=(currentQuestion/questions.length)*100;
+    document.getElementById("progressBar").style.width=progress+"%";
+
+    let input=document.getElementById("answerInput");
+    input.value="";
+    input.classList.remove("correct","wrong");
+    document.getElementById("feedback").innerHTML="";
+    lastState="";
+    input.focus();
+    
+    startTimer();
+}
+
+function checkAnswer(){
+    const input=document.getElementById("answerInput");
+    const answer=input.value.trim().toLowerCase();
+    const feedback=document.getElementById("feedback");
+
+    if(answer===""){
+        input.classList.remove("correct","wrong");
+        feedback.innerHTML="";
+        lastState="";
+        return;
+    }
+
+    if(answer===questions[currentQuestion].english){
+        input.classList.add("correct");
+        input.classList.remove("wrong");
+        feedback.innerHTML="✔";
+        feedback.className="correctMark";
+
+        if(lastState!=="correct"){
+            const snd = document.getElementById("correctSound");
+            snd.currentTime = 0;
+            snd.play().catch(err => console.log(err));
+            lastState="correct";
+        }
+    }else{
+        input.classList.add("wrong");
+        input.classList.remove("correct");
+        feedback.innerHTML="✖";
+        feedback.className="wrongMark";
+
+        if(lastState!=="wrong"){
+            const snd = document.getElementById("wrongSound");
+            snd.currentTime = 0;
+            snd.play().catch(err => console.log(err));
+            lastState="wrong";
+        }
+    }
+}
+
+function nextQuestion(){
+    const answer=document.getElementById("answerInput").value.trim().toLowerCase();
+
+    if(answer===questions[currentQuestion].english){
+        score++;
+    }
+
+    currentQuestion++;
+
+    if(currentQuestion>=questions.length){
+        finishQuiz();
+        return;
+    }
+
+    loadQuestion();
+}
+
+function launchFireworks(){
+    for(let i=0;i<40;i++){
+        const f=document.createElement("div");
+        f.className="firework";
+        f.innerHTML=["🎆","✨","🎉"][Math.floor(Math.random()*3)];
+        f.style.left=Math.random()*100+"vw";
+        f.style.top=Math.random()*100+"vh";
+        document.body.appendChild(f);
+        setTimeout(()=>f.remove(),2000);
+    }
+}
+
+function finishQuiz(){
+    isPlaying = false; // Ngắt trạng thái chơi để tránh lặp sự kiện
+    clearInterval(timer);
+    document.getElementById("quizScreen").classList.add("hidden");
+    document.getElementById("resultScreen").classList.remove("hidden");
+    document.getElementById("finalScore").innerHTML=score+" / "+questions.length;
+    launchFireworks(); // Luôn bắn pháo hoa ăn mừng dù kết thúc bằng cách nào
+}
+
+// Bắt sự kiện chuyển tab hoặc ẩn trình duyệt để nộp bài thầm lặng
+document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === "hidden" && isPlaying) {
+        finishQuiz();
+    }
+});
+
+document.addEventListener("keypress",function(e){
+    if(e.key==="Enter" &&
+    !document.getElementById("quizScreen").classList.contains("hidden")){
+        nextQuestion();
+    }
+});
+</script>
+</body>
+</html>
