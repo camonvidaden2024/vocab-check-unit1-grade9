@@ -117,16 +117,17 @@ tr:nth-child(even){background-color: #f9f9f9;}
 <div id="roleScreen" class="screen">
     <h1 style="color:#BA1B18; text-shadow:none;">VOCABULARY SYSTEM</h1>
     <p style="font-size:24px; margin-bottom:30px;">Who are you?:</p>
-    <button onclick="showScreen('startScreen')" style="width:85%;">PUPIL</button>
+    <button onclick="goToStudentLogin()" style="width:85%;">PUPIL</button>
     <br><br>
     <button class="btn-teacher" onclick="checkTeacherPassword()" style="width:85%;">TEACHER</button>
 </div>
 
 <div id="startScreen" class="screen hidden">
     <h1 style="color:#F99895; text-shadow:none;">VOCAB CHECK</h1>
+    <p id="studentNotice" style="font-size:18px; color:#555;">Đang đồng bộ số lượng từ vựng trực tuyến...</p>
     <input type="text" id="studentName" placeholder="Type your name...">
     <br>
-    <button onclick="startGame()">START</button>
+    <button id="btnStartStudent" onclick="startGame()" disabled style="background:#ccc;">START</button>
     <br>
     <button style="background:#ccc; color:black; font-size:16px; padding:5px 15px;" onclick="showScreen('roleScreen')">BACK</button>
 </div>
@@ -155,7 +156,10 @@ tr:nth-child(even){background-color: #f9f9f9;}
     <button onclick="showScreen('roleScreen')" style="background:#666; font-size:16px; padding:5px 15px; margin-top:0;">Thoát phòng GV</button>
     <hr style="margin:20px 0; border:0; border-top:1px solid #ccc;">
     
-    <h2>1. Ngân Hàng Câu Hỏi (<span id="totalQuestCount">0</span> câu)</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <h2 style="margin: 10px 0;">1. Ngân Hàng Câu Hỏi (<span id="totalQuestCount">0</span> câu)</h2>
+        <button onclick="deleteAllQuestions()" style="background:#BA1B18; font-size:14px; padding:6px 15px; margin: 10px 0;">❌ Xóa tất cả từ vựng</button>
+    </div>
     <div class="vocab-list" id="vocabListContainer"></div>
     
     <div style="background:#eef5fc; padding:20px; border-radius:10px; text-align:left;">
@@ -175,13 +179,10 @@ tr:nth-child(even){background-color: #f9f9f9;}
                 <tr>
                     <th>Họ và Tên</th>
                     <th>Số lần làm bài</th>
-                    <th>Tổng câu ĐÚNG</th>
-                    <th>Tổng câu SẠI</th>
-                    <th>Lần nộp cuối cùng</th>
-                </tr>
+                    <th>Kết quả làm bài</th> <th>Thời gian làm bài</th> </tr>
             </thead>
             <tbody id="analyticsTableBody">
-                <tr><td colspan="5">Đang kết nối dữ liệu...</td></tr>
+                <tr><td colspan="4">Đang kết nối dữ liệu...</td></tr>
             </tbody>
         </table>
     </div>
@@ -231,7 +232,7 @@ const defaultQuestions = [
 let questions = [];
 let currentQuestion=0, score=0, totalWrong=0, timeLeft=60, timer, lastState="", isPlaying=false, studentName="";
 
-// Tự động kéo dữ liệu câu hỏi trực tuyến từ Firebase về máy học sinh
+// Hàm kéo dữ liệu từ Firebase
 async function loadQuestionsFromDatabase() {
     try {
         let res = await fetch(`${FIREBASE_URL}/questions.json`);
@@ -239,7 +240,6 @@ async function loadQuestionsFromDatabase() {
         if (data) {
             questions = Object.keys(data).map(key => ({id: key, ...data[key]}));
         } else {
-            // Nếu mới tạo Firebase chưa có gì, tự động đẩy 30 câu hỏi gốc lên mạng
             for (let q of defaultQuestions) {
                 await fetch(`${FIREBASE_URL}/questions.json`, { method: 'POST', body: JSON.stringify(q) });
             }
@@ -247,12 +247,27 @@ async function loadQuestionsFromDatabase() {
         }
         document.getElementById("totalQuestCount").innerText = questions.length;
         renderVocabList();
+        return true;
     } catch (e) { 
-        console.log("Firebase trống hoặc lỗi, sử dụng bộ nhớ tạm máy", e); 
+        console.log("Không kết nối được Firebase, dùng bộ nhớ tạm máy", e); 
         questions = [...defaultQuestions]; 
+        return false;
     }
 }
-loadQuestionsFromDatabase();
+
+// Khi nhấn vào nút Học Sinh (PUPIL)
+async function goToStudentLogin() {
+    showScreen('startScreen');
+    document.getElementById("studentNotice").innerText = "Đang kiểm tra số lượng từ vựng trực tuyến...";
+    document.getElementById("btnStartStudent").disabled = true;
+    document.getElementById("btnStartStudent").style.background = "#ccc";
+
+    await loadQuestionsFromDatabase();
+
+    document.getElementById("studentNotice").innerHTML = `Hệ thống đã sẵn sàng! Đang có bài kiểm tra gồm: <b style="color:#BA1B18; font-size:20px;">${questions.length} từ vựng</b>.`;
+    document.getElementById("btnStartStudent").disabled = false;
+    document.getElementById("btnStartStudent").style.background = "#F99895";
+}
 
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -262,7 +277,7 @@ function showScreen(screenId) {
 
 function checkTeacherPassword() {
     let pass = prompt("Nhập mật khẩu Giáo Viên để quản lý:");
-    if(pass === "442266") { // Bạn có thể sửa mật khẩu tại đây
+    if(pass === "442266") { 
         showScreen('teacherScreen');
     } else { alert("Sai mật khẩu!"); }
 }
@@ -283,7 +298,7 @@ function startGame(){
     document.getElementById("correctSound").play().then(() => {
         document.getElementById("correctSound").pause();
         document.getElementById("correctSound").currentTime = 0;
-    }).catch(e => console.log("Hệ thống âm thanh sẵn sàng"));
+    }).catch(e => console.log("Âm thanh sẵn sàng"));
 
     showScreen('quizScreen');
     isPlaying = true; 
@@ -298,197 +313,4 @@ function startTimer() {
     timer = setInterval(() => {
         timeLeft--;
         document.getElementById("timer").innerText = "Time Left: " + timeLeft + "s";
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            totalWrong++;
-            nextQuestion();
-        }
-    }, 1000);
-}
-
-function loadQuestion(){
-    document.getElementById("questionCounter").innerHTML="Question "+(currentQuestion+1)+" / "+questions.length;
-    document.getElementById("questionBox").innerHTML=questions[currentQuestion].vietnamese;
-    document.getElementById("progressBar").style.width=((currentQuestion/questions.length)*100)+"%";
-
-    let input=document.getElementById("answerInput");
-    input.value="";
-    input.classList.remove("correct","wrong");
-    document.getElementById("feedback").innerHTML="";
-    lastState="";
-    input.focus();
-    startTimer();
-}
-
-function checkAnswer(){
-    const input=document.getElementById("answerInput");
-    const answer=input.value.trim().toLowerCase();
-    const feedback=document.getElementById("feedback");
-
-    if(answer===""){
-        input.classList.remove("correct","wrong");
-        feedback.innerHTML="";
-        lastState="";
-        return;
-    }
-
-    if(answer===questions[currentQuestion].english){
-        input.classList.add("correct");
-        input.classList.remove("wrong");
-        feedback.innerHTML="✔";
-        feedback.className="correctMark";
-
-        if(lastState!=="correct"){
-            const snd = document.getElementById("correctSound");
-            snd.currentTime = 0; snd.play().catch(err => {});
-            lastState="correct";
-        }
-    }else{
-        input.classList.add("wrong");
-        input.classList.remove("correct");
-        feedback.innerHTML="✖";
-        feedback.className="wrongMark";
-
-        if(lastState!=="wrong"){
-            const snd = document.getElementById("wrongSound");
-            snd.currentTime = 0; snd.play().catch(err => {});
-            lastState="wrong";
-        }
-    }
-}
-
-function nextQuestion(){
-    const answer=document.getElementById("answerInput").value.trim().toLowerCase();
-    if(answer===questions[currentQuestion].english){
-        score++;
-    } else {
-        totalWrong++;
-    }
-    currentQuestion++;
-
-    if(currentQuestion >= questions.length){
-        finishQuiz();
-        return;
-    }
-    loadQuestion();
-}
-
-// Bắn kết quả lên bảng giáo viên qua mạng internet
-async function sendResultToDatabase() {
-    let record = {
-        name: studentName,
-        correct: score,
-        wrong: totalWrong,
-        time: new Date().toLocaleString('vi-VN')
-    };
-    try {
-        await fetch(`${FIREBASE_URL}/analytics.json`, { method: 'POST', body: JSON.stringify(record) });
-    } catch (e) { console.log("Lỗi kết nối Firebase", e); }
-}
-
-function finishQuiz(){
-    if(!isPlaying) return;
-    isPlaying = false;
-    clearInterval(timer);
-    sendResultToDatabase(); // Gửi điểm số về máy giáo viên
-    showScreen('resultScreen');
-    document.getElementById("finalScore").innerHTML=score+" / "+questions.length;
-    launchFireworks();
-}
-
-// Nếu học sinh chuyển tab gian lận -> Tự động nộp bài và tính sai toàn bộ câu chưa làm
-document.addEventListener("visibilitychange", function() {
-    if (document.visibilityState === "hidden" && isPlaying) {
-        let remainCount = questions.length - currentQuestion;
-        totalWrong += remainCount; 
-        finishQuiz();
-    }
-});
-
-// --- CODE HỆ THỐNG QUẢN LÝ CỦA GIÁO VIÊN ---
-function renderVocabList() {
-    let html = "";
-    questions.forEach((q, index) => {
-        html += `<div class="vocab-item">
-            <span>${index+1}. <b>${q.vietnamese}</b>: ${q.english}</span>
-            <button onclick="deleteQuestion('${q.id}')" style="background:#BA1B18; padding:3px 10px; font-size:14px; margin:0;">Xóa</button>
-        </div>`;
-    });
-    document.getElementById("vocabListContainer").innerHTML = html;
-}
-
-async function addQuestion() {
-    let v = document.getElementById("newViet").value.trim();
-    let e = document.getElementById("newEng").value.trim();
-    if(!v || !e) { alert("Vui lòng điền đủ nghĩa từ!"); return; }
-    
-    await fetch(`${FIREBASE_URL}/questions.json`, {
-        method: 'POST',
-        body: JSON.stringify({ vietnamese: v, english: e.toLowerCase() })
-    });
-    document.getElementById("newViet").value = "";
-    document.getElementById("newEng").value = "";
-    await loadQuestionsFromDatabase();
-}
-
-async function deleteQuestion(id) {
-    if(!confirm("Xóa câu hỏi này khỏi hệ thống?")) return;
-    await fetch(`${FIREBASE_URL}/questions/${id}.json`, { method: 'DELETE' });
-    await loadQuestionsFromDatabase();
-}
-
-async function loadAnalytics() {
-    try {
-        let res = await fetch(`${FIREBASE_URL}/analytics.json`);
-        let data = await res.json();
-        let tbody = document.getElementById("analyticsTableBody");
-        if(!data) { tbody.innerHTML = "<tr><td colspan='5'>Chưa có dữ liệu học sinh làm bài.</td></tr>"; return; }
-        
-        let studentSummary = {};
-        Object.keys(data).forEach(key => {
-            let item = data[key];
-            if(!studentSummary[item.name]) {
-                studentSummary[item.name] = { count: 0, correct: 0, wrong: 0, lastTime: "" };
-            }
-            studentSummary[item.name].count += 1;
-            studentSummary[item.name].correct += item.correct;
-            studentSummary[item.name].wrong += item.wrong;
-            studentSummary[item.name].lastTime = item.time;
-        });
-        
-        let html = "";
-        Object.keys(studentSummary).forEach(name => {
-            let s = studentSummary[name];
-            html += `<tr>
-                <td><b>${name}</b></td>
-                <td>${s.count} lần</td>
-                <td style="color:#9ABF17; font-weight:bold;">${s.correct} câu</td>
-                <td style="color:#BA1B18; font-weight:bold;">${s.wrong} câu</td>
-                <td>${s.lastTime}</td>
-            </tr>`;
-        });
-        tbody.innerHTML = html;
-    } catch(err) { console.log(err); }
-}
-
-async function clearAnalytics() {
-    if(!confirm("Bạn có chắc chắn muốn xóa sạch lịch sử?")) return;
-    await fetch(`${FIREBASE_URL}/analytics.json`, { method: 'DELETE' });
-    loadAnalytics();
-}
-
-function launchFireworks(){
-    for(let i=0;i<40;i++){
-        const f=document.createElement("div"); f.className="firework";
-        f.innerHTML=["🎆","✨","🎉"][Math.floor(Math.random()*3)];
-        f.style.left=Math.random()*100+"vw"; f.style.top=Math.random()*100+"vh";
-        document.body.appendChild(f); setTimeout(()=>f.remove(),2000);
-    }
-}
-
-document.addEventListener("keypress",function(e){
-    if(e.key==="Enter" && !document.getElementById("quizScreen").classList.contains("hidden")){ nextQuestion(); }
-});
-</script>
-</body>
-</html>
+        if (timeLeft
