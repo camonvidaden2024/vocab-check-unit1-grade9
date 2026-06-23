@@ -123,7 +123,7 @@ tr:nth-child(even){background-color: #f9f9f9;}
 
 <div id="startScreen" class="screen hidden">
     <h1 style="color:#F99895; text-shadow:none;">VOCAB CHECK</h1>
-    <p id="studentNotice" style="font-size:18px; color:#555;">Đang kiểm tra dữ liệu học liệu...</p>
+    <p id="studentNotice" style="font-size:18px; color:#555;">Đang đồng bộ số lượng từ vựng trực tuyến...</p>
     <input type="text" id="studentName" placeholder="Type your name...">
     <br>
     <button id="btnStartStudent" onclick="startGame()" style="background:#F99895; color:white;">START</button>
@@ -183,7 +183,7 @@ tr:nth-child(even){background-color: #f9f9f9;}
                 </tr>
             </thead>
             <tbody id="analyticsTableBody">
-                <tr><td colspan="4">Chưa có kết nối dữ liệu trực tuyến.</td></tr>
+                <tr><td colspan="4">Đang kết nối dữ liệu...</td></tr>
             </tbody>
         </table>
     </div>
@@ -193,8 +193,10 @@ tr:nth-child(even){background-color: #f9f9f9;}
 <audio id="wrongSound" preload="auto"><source src="wrong.mp3" type="audio/mpeg"></audio>
 
 <script>
+// --- ĐƯỜNG DẪN FIREBASE CHUẨN ---
 const FIREBASE_URL = "https://vocab-check-for-teachers-default-rtdb.firebaseio.com"; 
 
+// 30 câu hỏi mặc định
 const defaultQuestions = [
     {vietnamese:"cơ sở vật chất",english:"facilities"},
     {vietnamese:"lính cứu hỏa",english:"firefighter"},
@@ -231,26 +233,29 @@ const defaultQuestions = [
 let questions = [...defaultQuestions];
 let currentQuestion=0, score=0, totalWrong=0, timeLeft=60, timer, lastState="", isPlaying=false, studentName="";
 
+// Hàm kéo dữ liệu từ Firebase an toàn
 async function loadQuestionsFromDatabase() {
     try {
         let res = await fetch(`${FIREBASE_URL}/questions.json`);
-        if(!res.ok) throw new Error("Chặn kết nối");
-        let data = await res.json();
-        if (data) {
-            questions = Object.keys(data).map(key => ({id: key, ...data[key]}));
+        if(res.ok) {
+            let data = await res.json();
+            if (data) {
+                questions = Object.keys(data).map(key => ({id: key, ...data[key]}));
+            }
         }
     } catch (e) { 
-        console.log("Firebase Error, sử dụng câu hỏi mặc định:", e); 
+        console.log("Dùng danh sách mặc định:", e);
         questions = [...defaultQuestions]; 
     }
-    document.getElementById("totalQuestCount").innerText = questions.length;
+    let countEl = document.getElementById("totalQuestCount");
+    if(countEl) countEl.innerText = questions.length;
     renderVocabList();
 }
 
 async function goToStudentLogin() {
     showScreen('startScreen');
     await loadQuestionsFromDatabase();
-    document.getElementById("studentNotice").innerHTML = `Hệ thống sẵn sàng! Bài kiểm tra gồm: <b style="color:#BA1B18; font-size:20px;">${questions.length} từ vựng</b>.`;
+    document.getElementById("studentNotice").innerHTML = `Hệ thống đã sẵn sàng! Đang có bài kiểm tra gồm: <b style="color:#BA1B18; font-size:20px;">${questions.length} từ vựng</b>.`;
 }
 
 function showScreen(screenId) {
@@ -276,6 +281,13 @@ function startGame(){
     studentName = document.getElementById("studentName").value.trim();
     if(studentName===""){alert("Please type your name!");return;}
     shuffleArray(questions);
+    
+    // Kích hoạt tương tác âm thanh ban đầu một cách an toàn
+    try {
+        let snd = document.getElementById("correctSound");
+        if(snd) { snd.play().then(() => { snd.pause(); snd.currentTime = 0; }).catch(e => {}); }
+    } catch(err) {}
+
     showScreen('quizScreen');
     isPlaying = true; 
     loadQuestion();
@@ -311,11 +323,23 @@ function checkAnswer(){
     if(answer===questions[currentQuestion].english){
         input.classList.add("correct"); input.classList.remove("wrong");
         feedback.innerHTML="✔"; feedback.className="correctMark";
-        if(lastState!=="correct"){ document.getElementById("correctSound").currentTime = 0; document.getElementById("correctSound").play().catch(e=>{}); lastState="correct"; }
+        if(lastState!=="correct"){ 
+            try {
+                let snd = document.getElementById("correctSound");
+                if(snd) { snd.currentTime = 0; snd.play().catch(e => {}); }
+            } catch(e){}
+            lastState="correct"; 
+        }
     }else{
         input.classList.add("wrong"); input.classList.remove("correct");
         feedback.innerHTML="✖"; feedback.className="wrongMark";
-        if(lastState!=="wrong"){ document.getElementById("wrongSound").currentTime = 0; document.getElementById("wrongSound").play().catch(e=>{}); lastState="wrong"; }
+        if(lastState!=="wrong"){ 
+            try {
+                let snd = document.getElementById("wrongSound");
+                if(snd) { snd.currentTime = 0; snd.play().catch(e => {}); }
+            } catch(e){}
+            lastState="wrong"; 
+        }
     }
 }
 
@@ -349,8 +373,10 @@ document.addEventListener("visibilitychange", function() {
 
 function renderVocabList() {
     let html = "";
+    let container = document.getElementById("vocabListContainer");
+    if(!container) return;
     if(!questions || questions.length === 0) {
-        document.getElementById("vocabListContainer").innerHTML = "<p style='color:#666; padding: 10px;'>Ngân hàng trống.</p>"; return;
+        container.innerHTML = "<p style='color:#666; padding: 10px;'>Ngân hàng trống.</p>"; return;
     }
     questions.forEach((q, index) => {
         html += `<div class="vocab-item">
@@ -358,7 +384,7 @@ function renderVocabList() {
             <button onclick="deleteQuestion('${q.id}')" style="background:#BA1B18; padding:3px 10px; font-size:14px; margin:0;">Xóa</button>
         </div>`;
     });
-    document.getElementById("vocabListContainer").innerHTML = html;
+    container.innerHTML = html;
 }
 
 async function addQuestion() {
@@ -384,7 +410,7 @@ async function deleteAllQuestions() {
             await fetch(`${FIREBASE_URL}/questions.json`, { method: 'DELETE' });
             questions = []; document.getElementById("totalQuestCount").innerText = 0; renderVocabList();
             alert("Đã xóa sạch thành công!");
-        } catch(err) { alert("Lỗi kết nối database."); }
+        } catch(err) { alert("Lỗi khi kết nối database."); }
     }
 }
 
@@ -437,10 +463,10 @@ function launchFireworks(){
     }
 }
 
-// Chạy khởi tạo danh sách từ mặc định ban đầu trước
+// Khởi tạo các thành phần giao diện tĩnh ngay
 document.getElementById("totalQuestCount").innerText = questions.length;
 renderVocabList();
-// Cố gắng đồng bộ Firebase sau (nếu lỗi cũng không gây sập trang)
+// Đồng bộ Firebase an toàn song song
 loadQuestionsFromDatabase();
 
 document.addEventListener("keypress",function(e){
