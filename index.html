@@ -116,4 +116,106 @@ tr:nth-child(even){background-color: #f9f9f9;}
 
 <div id="roleScreen" class="screen">
     <h1 style="color:#BA1B18; text-shadow:none;">VOCABULARY SYSTEM</h1>
-    <p
+    <p style="font-size:24px; margin-bottom:30px;">Who are you?:</p>
+    <button onclick="goToStudentLogin()" style="width:85%;">PUPIL</button>
+    <br><br>
+    <button class="btn-teacher" onclick="checkTeacherPassword()" style="width:85%;">TEACHER</button>
+</div>
+
+<div id="startScreen" class="screen hidden">
+    <h1 style="color:#F99895; text-shadow:none;">VOCAB CHECK</h1>
+    <p id="studentNotice" style="font-size:18px; color:#555;">Đang đồng bộ số lượng từ vựng trực tuyến...</p>
+    <input type="text" id="studentName" placeholder="Type your name...">
+    <br>
+    <button id="btnStartStudent" onclick="startGame()" disabled style="background:#ccc;">START</button>
+    <br>
+    <button style="background:#ccc; color:black; font-size:16px; padding:5px 15px;" onclick="showScreen('roleScreen')">BACK</button>
+</div>
+
+<div id="quizScreen" class="screen hidden">
+    <div id="timer">Time Left: 60s</div>
+    <div id="progressContainer"><div id="progressBar"></div></div>
+    <div id="questionCounter"></div>
+    <div id="questionBox"></div>
+    <div id="feedback"></div>
+    <input type="text" id="answerInput" placeholder="Type your answer..." oninput="checkAnswer()">
+    <br>
+    <button onclick="nextQuestion()">NEXT</button>
+</div>
+
+<div id="resultScreen" class="screen hidden">
+    <h2 style="font-size:48px;">CONGRATULATIONS!</h2>
+    <p style="font-size:30px;">YOU GET</p>
+    <div id="finalScore"></div>
+    <br>
+    <button onclick="location.reload()" style="background:#4A90E2;">Làm lại bài</button>
+</div>
+
+<div id="teacherScreen" class="screen hidden">
+    <h1 style="color:#4A90E2; text-shadow:none; font-size:40px;">TEACHER DASHBOARD</h1>
+    <button onclick="showScreen('roleScreen')" style="background:#666; font-size:16px; padding:5px 15px; margin-top:0;">Thoát phòng GV</button>
+    <hr style="margin:20px 0; border:0; border-top:1px solid #ccc;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <h2 style="margin: 10px 0;">1. Ngân Hàng Câu Hỏi (<span id="totalQuestCount">0</span> câu)</h2>
+        <button onclick="deleteAllQuestions()" style="background:#BA1B18; font-size:14px; padding:6px 15px; margin: 10px 0;">❌ Xóa tất cả từ vựng</button>
+    </div>
+    <div class="vocab-list" id="vocabListContainer"></div>
+    
+    <div style="background:#eef5fc; padding:20px; border-radius:10px; text-align:left;">
+        <h3 style="margin-top:0;">Thêm từ vựng mới:</h3>
+        <input type="text" id="newViet" placeholder="Nghĩa tiếng Việt (Ví dụ: quả táo)" style="width:95%;">
+        <input type="text" id="newEng" placeholder="Từ tiếng Anh (Ví dụ: apple)" style="width:95%;">
+        <button class="btn-teacher" onclick="addQuestion()" style="margin-top:10px;">Thêm Vào Hệ Thống</button>
+    </div>
+
+    <hr style="margin:30px 0; border:0; border-top:1px solid #ccc;">
+
+    <h2>2. Giám Sát Kết Quả Học Sinh Trực Tuyến</h2>
+    <button onclick="clearAnalytics()" style="background:#BA1B18; font-size:16px; padding:5px 15px;">Xóa toàn bộ lịch sử nộp bài</button>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Họ và Tên</th>
+                    <th>Số lần làm bài</th>
+                    <th>Kết quả làm bài</th>
+                    <th>Thời gian làm bài</th>
+                </tr>
+            </thead>
+            <tbody id="analyticsTableBody">
+                <tr><td colspan="4">Đang kết nối dữ liệu...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<audio id="correctSound" preload="auto"><source src="correct.mp3" type="audio/mpeg"></audio>
+<audio id="wrongSound" preload="auto"><source src="wrong.mp3" type="audio/mpeg"></audio>
+
+<script>
+// --- ĐƯỜNG DẪN FIREBASE ĐÃ ĐƯỢC CHUẨN HÓA (ĐÃ BỎ DẤU / Ở CUỐI) ---
+const FIREBASE_URL = "https://vocab-check-for-teachers-default-rtdb.firebaseio.com"; 
+
+// 30 câu hỏi gốc ban đầu của bạn
+const defaultQuestions = [
+    {vietnamese:"cơ sở vật chất",english:"facilities"},
+    {vietnamese:"lính cứu hỏa",english:"firefighter"},
+    {vietnamese:"chuẩn bị",english:"prepare"},
+    {vietnamese:"tầm quan trọng",english:"importance"},
+    {vietnamese:"tiệc tân gia",english:"house-warming party"},
+    {vietnamese:"đặc sản địa phương",english:"speciality food"},
+    {vietnamese:"người tiêu thụ, khách hàng",english:"consumer"},
+    {vietnamese:"làm thủ công",english:"hand-craft"},
+    {vietnamese:"trung tâm thành phố",english:"city centre"},
+    {vietnamese:"hướng dẫn",english:"instruct"},
+    {vietnamese:"thợ thủ công",english:"artisan"},
+    {vietnamese:"cải thiện",english:"improve"},
+    {vietnamese:"điểm thu hút khách du lịch",english:"tourist attraction"},
+    {vietnamese:"địa phương",english:"local"},
+    {vietnamese:"nguyên bản",english:"original"},
+    {vietnamese:"cảnh sát",english:"police officer"},
+    {vietnamese:"rút ngắn",english:"shorten"},
+    {vietnamese:"người giao hàng",english:"delivery person"},
+    {vietnamese:"quạt giấy",english:"paper fan"},
+    {vietnamese:"đồ
