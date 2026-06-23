@@ -193,10 +193,8 @@ tr:nth-child(even){background-color: #f9f9f9;}
 <audio id="wrongSound" preload="auto"><source src="wrong.mp3" type="audio/mpeg"></audio>
 
 <script>
-// --- ĐƯỜNG DẪN FIREBASE CHUẨN ---
 const FIREBASE_URL = "https://vocab-check-for-teachers-default-rtdb.firebaseio.com"; 
 
-// 30 câu hỏi mặc định
 const defaultQuestions = [
     {vietnamese:"cơ sở vật chất",english:"facilities"},
     {vietnamese:"lính cứu hỏa",english:"firefighter"},
@@ -233,7 +231,6 @@ const defaultQuestions = [
 let questions = [...defaultQuestions];
 let currentQuestion=0, score=0, totalWrong=0, timeLeft=60, timer, lastState="", isPlaying=false, studentName="";
 
-// Hàm kéo dữ liệu từ Firebase an toàn
 async function loadQuestionsFromDatabase() {
     try {
         let res = await fetch(`${FIREBASE_URL}/questions.json`);
@@ -244,7 +241,6 @@ async function loadQuestionsFromDatabase() {
             }
         }
     } catch (e) { 
-        console.log("Dùng danh sách mặc định:", e);
         questions = [...defaultQuestions]; 
     }
     let countEl = document.getElementById("totalQuestCount");
@@ -281,13 +277,6 @@ function startGame(){
     studentName = document.getElementById("studentName").value.trim();
     if(studentName===""){alert("Please type your name!");return;}
     shuffleArray(questions);
-    
-    // Kích hoạt tương tác âm thanh ban đầu một cách an toàn
-    try {
-        let snd = document.getElementById("correctSound");
-        if(snd) { snd.play().then(() => { snd.pause(); snd.currentTime = 0; }).catch(e => {}); }
-    } catch(err) {}
-
     showScreen('quizScreen');
     isPlaying = true; 
     loadQuestion();
@@ -463,10 +452,9 @@ function launchFireworks(){
     }
 }
 
-// Khởi tạo các thành phần giao diện tĩnh ngay
+// KHỞI TẠO GIAO DIỆN TĨNH NGAY LẬP TỨC ĐỂ TRÁNH TREO TRANG
 document.getElementById("totalQuestCount").innerText = questions.length;
 renderVocabList();
-// Đồng bộ Firebase an toàn song song
 loadQuestionsFromDatabase();
 
 document.addEventListener("keypress",function(e){
